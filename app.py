@@ -169,8 +169,8 @@ if not all(x in filter_duel_type for x in ["Successful", "Unsuccessful"]):
         mask |= df['type'].str.contains('UNSUCCESSFUL', case=False)
     df = df[mask]
 
-# Compute stats always from full match data
-stats = compute_stats(full_data[selected_match])
+# Compute stats always from the filtered data
+stats = compute_stats(df)
 
 # ==========================
 # Main Layout
@@ -190,9 +190,11 @@ with col_map:
         dy = row['end_y'] - row['start_y']
         if "UNSUCCESSFUL" in row["type"].upper():
             head_w, head_l = 2, 2
+            width = 3
         else:
             head_w, head_l = 1, 1
-        ax.arrow(row['start_x'], row['start_y'], dx, dy, head_width=head_w, head_length=head_l, fc=color, ec=color, alpha=0.9)
+            width = 1
+        ax.arrow(row['start_x'], row['start_y'], dx, dy, head_width=head_w, head_length=head_l, fc=color, ec=color, alpha=1.0, width=width)
 
     # Attack Arrow
     ax.annotate('', xy=(70, 83), xytext=(50, 83),
