@@ -88,16 +88,11 @@ def build_df(coords: list[tuple[float, float]], passes_errados: list[int]) -> pd
     df["errado"] = df["numero"].isin(passes_errados)
     df["certo"] = ~df["errado"]
 
-    # Final third entry: starts outside and ends inside
-    df["into_final_third"] = (df["x_start"] < FINAL_THIRD_LINE_X) & (
-        df["x_end"] >= FINAL_THIRD_LINE_X
-    )
+    # Passes in final third: x_end >= 80
+    df["in_final_third"] = df["x_end"] >= FINAL_THIRD_LINE_X
 
-    # Directions
-    df["forward"] = df["x_end"] > df["x_start"]
-    df["backward"] = df["x_end"] < df["x_start"]
-    df["right"] = df["y_end"] > df["y_start"]
-    df["left"] = df["y_end"] < df["y_start"]
+    # Passes to the box: x_end >= 100
+    df["to_box"] = df["x_end"] >= 100
     return df
 
 
@@ -108,34 +103,33 @@ def compute_stats(df: pd.DataFrame) -> dict:
 
     accuracy = (successful / total_passes * 100.0) if total_passes else 0.0
 
-    final_third_total = int(df["into_final_third"].sum())
-    final_third_success = int((df["into_final_third"] & ~df["errado"]).sum())
-    final_third_unsuccess = int((df["into_final_third"] & df["errado"]).sum())
+    final_third_total = int(df["in_final_third"].sum())
+    final_third_success = int((df["in_final_third"] & ~df["errado"]).sum())
+    final_third_unsuccess = int((df["in_final_third"] & df["errado"]).sum())
     final_third_accuracy = (
         final_third_success / final_third_total * 100.0 if final_third_total else 0.0
     )
 
-    forward_count = int(df["forward"].sum())
-    backward_count = int(df["backward"].sum())
-    right_count = int(df["right"].sum())
-    left_count = int(df["left"].sum())
-
-    forward_pct_total = (forward_count / total_passes * 100.0) if total_passes else 0.0
+    box_total = int(df["to_box"].sum())
+    box_success = int((df["to_box"] & ~df["errado"]).sum())
+    box_unsuccess = int((df["to_box"] & df["errado"]).sum())
+    box_accuracy = (
+        box_success / box_total * 100.0 if box_total else 0.0
+    )
 
     return {
         "total_passes": total_passes,
         "successful_passes": successful,
         "unsuccessful_passes": unsuccessful,
         "accuracy_pct": round(accuracy, 2),
-        "final_third_entries": final_third_total,
+        "final_third_total": final_third_total,
         "final_third_success": final_third_success,
         "final_third_unsuccess": final_third_unsuccess,
         "final_third_accuracy_pct": round(final_third_accuracy, 2),
-        "forward_passes": forward_count,
-        "forward_pct_total": round(forward_pct_total, 2),
-        "backward_passes": backward_count,
-        "right_passes": right_count,
-        "left_passes": left_count,
+        "box_total": box_total,
+        "box_success": box_success,
+        "box_unsuccess": box_unsuccess,
+        "box_accuracy_pct": round(box_accuracy, 2),
     }
 
 
@@ -274,23 +268,21 @@ with col_stats:
 
     st.divider()
 
-    st.subheader("Final Third (Entry)")
+    st.subheader("Final Third")
     c7, c8, c9 = st.columns(3)
-    c7.metric("Total Entries", stats["final_third_entries"])
+    c7.metric("Total", stats["final_third_total"])
     c8.metric("Successful", stats["final_third_success"])
     c9.metric("Unsuccessful", stats["final_third_unsuccess"])
-    st.metric("Entry Accuracy", f'{stats["final_third_accuracy_pct"]:.1f}%')
+    st.metric("Accuracy", f'{stats["final_third_accuracy_pct"]:.1f}%')
 
     st.divider()
 
-    st.subheader("Directions")
-    d1, d2 = st.columns(2)
-    d1.metric("Forward", f'{stats["forward_passes"]} ({stats["forward_pct_total"]:.1f}% of total)')
-    d2.metric("Backward", stats["backward_passes"])
-
-    d3, d4 = st.columns(2)
-    d3.metric("Right", stats["right_passes"])
-    d4.metric("Left", stats["left_passes"])
+    st.subheader("Passes to the Box")
+    d1, d2, d3 = st.columns(3)
+    d1.metric("Total", stats["box_total"])
+    d2.metric("Successful", stats["box_success"])
+    d3.metric("Unsuccessful", stats["box_unsuccess"])
+    st.metric("Accuracy", f'{stats["box_accuracy_pct"]:.1f}%')
 
 with col_map:
     st.subheader("Pass Map")
