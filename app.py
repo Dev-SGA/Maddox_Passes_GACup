@@ -67,6 +67,13 @@ MATCHES = ["Vs Los Angeles", "Vs Slavia Praha", "Vs Sockers", "All Matches"]
 st.sidebar.header("Match selection")
 selected_match = st.sidebar.radio("Choose the match", MATCHES, index=0)
 
+st.sidebar.header("Pass filter")
+pass_filter = st.sidebar.radio(
+    "Filter passes",
+    ["All Passes", "Successful Only", "Unsuccessful Only"],
+    index=0
+)
+
 
 def build_df(coords: list[tuple[float, float]], passes_errados: list[int]) -> pd.DataFrame:
     passes = []
@@ -249,7 +256,15 @@ if selected_match == "All Matches":
 else:
     coords = coords_by_match[selected_match]
     errados = passes_errados_by_match[selected_match]
+
 df = build_df(coords, errados)
+
+# Apply pass filter
+if pass_filter == "Successful Only":
+    df = df[df["certo"]].reset_index(drop=True)
+elif pass_filter == "Unsuccessful Only":
+    df = df[df["errado"]].reset_index(drop=True)
+
 stats = compute_stats(df)
 
 # ==========================
