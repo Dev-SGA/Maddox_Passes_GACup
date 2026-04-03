@@ -69,6 +69,7 @@ df_all = pd.concat(dfs_by_match.values(), ignore_index=True)
 full_data = {"All games": df_all}
 full_data.update(dfs_by_match)
 
+
 def get_style(event_type, has_video):
     """Returns marker, color (rgba), size, and linewidth based on event type"""
     event_type = event_type.upper()
@@ -169,7 +170,7 @@ if not all(x in filter_duel_type for x in ["Successful", "Unsuccessful"]):
         mask |= df['type'].str.contains('UNSUCCESSFUL', case=False)
     df = df[mask]
 
-# Compute stats always from the filtered data
+# Compute stats from filtered data
 stats = compute_stats(df)
 
 # ==========================
