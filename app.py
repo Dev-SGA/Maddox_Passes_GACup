@@ -93,8 +93,6 @@ def compute_stats(df: pd.DataFrame) -> dict:
     unsuccessful = int(df["type"].str.contains("LOST", case=False).sum())
     accuracy = (successful / total_passes * 100.0) if total_passes else 0.0
 
-    key_passes = 1
-
     in_final_third = df["x_end"] >= FINAL_THIRD_LINE_X
     final_third_total = int(in_final_third.sum())
     final_third_success = int((in_final_third & df["type"].str.contains("WON", case=False)).sum())
@@ -112,7 +110,7 @@ def compute_stats(df: pd.DataFrame) -> dict:
         "successful_passes": successful,
         "unsuccessful_passes": unsuccessful,
         "accuracy_pct": round(accuracy, 2),
-        "key_passes": key_passes,
+        "assists": 1,
         "final_third_total": final_third_total,
         "final_third_success": final_third_success,
         "final_third_unsuccess": final_third_unsuccess,
@@ -262,11 +260,11 @@ col_stats, col_right = st.columns([1, 2], gap="large")
 with col_stats:
     st.subheader("Statistics")
 
-    c1, c2, c3, c4 = st.columns(5)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Passes", stats["total_passes"])
     c2.metric("Successful", stats["successful_passes"])
     c3.metric("Accuracy", f'{stats["accuracy_pct"]:.1f}%')
-    c4.metric("Assists", stats["key_passes"])
+    c4.metric("Assists", stats["assists"])
 
     st.divider()
 
