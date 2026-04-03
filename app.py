@@ -82,11 +82,11 @@ def get_style(event_type, has_video):
     # 1. PASS SUCCESSFUL
     if "SUCCESSFUL" in event_type:
         # Green
-        return 'o', (0.1, 0.95, 0.1, 0.95), 110, 0.5
+        return 'o', (0.1, 0.95, 0.1, 1.0), 110, 0.5
     # 2. PASS UNSUCCESSFUL
     if "UNSUCCESSFUL" in event_type:
         # Red
-        return 'x', (0.95, 0.1, 0.1, 0.75), 120, 3.0
+        return 'x', (0.95, 0.1, 0.1, 1.0), 120, 3.0
 
     # Default
     return 'o', (0.5, 0.5, 0.5, 0.8), 90, 0.5
@@ -194,7 +194,11 @@ with col_map:
         # For passes, draw arrows
         dx = row['end_x'] - row['start_x']
         dy = row['end_y'] - row['start_y']
-        ax.arrow(row['start_x'], row['start_y'], dx, dy, head_width=1, head_length=1, fc=color, ec=color, alpha=0.7)
+        if "UNSUCCESSFUL" in row["type"].upper():
+            head_w, head_l = 2, 2
+        else:
+            head_w, head_l = 1, 1
+        ax.arrow(row['start_x'], row['start_y'], dx, dy, head_width=head_w, head_length=head_l, fc=color, ec=color, alpha=0.9)
 
     # Attack Arrow
     ax.annotate('', xy=(70, 83), xytext=(50, 83),
@@ -204,11 +208,8 @@ with col_map:
 
     # Legend
     legend_elements = [
-        Line2D([0], [0], marker='>', color='w', label='Successful Pass',
-               markerfacecolor=(0.1, 0.95, 0.1, 0.95), markersize=10, linestyle='None'),
-
-        Line2D([0], [0], marker='>', color='w', label='Unsuccessful Pass',
-               markerfacecolor=(0.95, 0.1, 0.1, 0.75), markersize=10, linestyle='None'),
+        Line2D([0], [0], color=(0.1, 0.95, 0.1, 1.0), lw=4, label='Successful Pass'),
+        Line2D([0], [0], color=(0.95, 0.1, 0.1, 1.0), lw=4, label='Unsuccessful Pass'),
     ]
 
     # Apply legend to graphic
