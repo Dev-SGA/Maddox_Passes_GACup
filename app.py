@@ -1,15 +1,9 @@
-import re
-from io import BytesIO
-
 import numpy as np
 import pandas as pd
 import streamlit as st
 from mplsoccer import Pitch
 import matplotlib.pyplot as plt
-from PIL import Image
 from matplotlib.lines import Line2D
-from matplotlib.patches import FancyArrowPatch
-from streamlit_image_coordinates import streamlit_image_coordinates
 
 
 st.set_page_config(layout="wide", page_title="Pass Map Dashboard")
@@ -181,12 +175,12 @@ stats = compute_stats(full_data[selected_match])
 # ==========================
 # Main Layout
 # ==========================
-col_map, col_vid = st.columns([1, 1])
+col_map, col_stats = st.columns([2, 1])
 
 with col_map:
     st.subheader("Interactive Pitch Map")
     pitch = Pitch(pitch_type='statsbomb', pitch_color='#f8f8f8', line_color='#4a4a4a')
-    fig, ax = pitch.draw(figsize=(10, 7))
+    fig, ax = pitch.draw(figsize=(12, 8))
 
     for _, row in df.iterrows():
         has_vid = row["video"] is not None
@@ -230,70 +224,14 @@ with col_map:
 
     legend.get_title().set_fontweight('bold')
 
-    # Convert plot to image for coordinate tracking
-    buf = BytesIO()
-    plt.savefig(buf, format="png", dpi=100, bbox_inches='tight')
-    buf.seek(0)
-    img_obj = Image.open(buf)
+    st.pyplot(fig)
 
-    # Use fixed width to ensure coordinate scaling works
-    click = streamlit_image_coordinates(img_obj, width=700)
-
-# ==========================
-# Interaction Logic
-# ==========================
-selected_event = None
-
-if click is not None:
-    real_w, real_h = img_obj.size
-    disp_w, disp_h = click["width"], click["height"]
-
-    # Map pixel click to actual image pixels
-    pixel_x = click["x"] * (real_w / disp_w)
-    pixel_y = click["y"] * (real_h / disp_h)
-
-    # Invert Y for Matplotlib logic and transform to pitch data coordinates
-    mpl_pixel_y = real_h - pixel_y
-    coords = ax.transData.inverted().transform((pixel_x, mpl_pixel_y))
-    field_x, field_y = coords[0], coords[1]
-
-    # Calculate distance to start or end
-    df["dist_start"] = np.sqrt((df["start_x"] - field_x)**2 + (df["start_y"] - field_y)**2)
-    df["dist_end"] = np.sqrt((df["end_x"] - field_x)**2 + (df["end_y"] - field_y)**2)
-    df["dist"] = np.minimum(df["dist_start"], df["dist_end"])
-
-    # Radius threshold for easier selection
-    RADIUS = 5
-    candidates = df[df["dist"] < RADIUS]
-
-    if not candidates.empty:
-        selected_event = candidates.loc[candidates["dist"].idxmin()]
-
-# ==========================
-# Video Display & Stats
-# ==========================
-with col_vid:
-    st.subheader("Event Details")
-    if selected_event is not None:
-        st.success(f"**Selected Event:** {selected_event['type']}")
-        st.info(f"**Start:** X: {selected_event['start_x']:.2f}, Y: {selected_event['start_y']:.2f}")
-        st.info(f"**End:** X: {selected_event['end_x']:.2f}, Y: {selected_event['end_y']:.2f}")
-
-        if selected_event["video"]:
-            try:
-                st.video(selected_event["video"])
-            except:
-                st.error(f"Video file not found: {selected_event['video']}")
-        else:
-            st.warning("No video footage available for this specific event.")
-    else:
-        st.info("Select an arrow on the pitch to view event details.")
-
-    st.divider()
+with col_stats:
     st.subheader("Performance Statistics")
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Overall Passes", f"{stats['pass_wins']}/{stats['pass_total']}", f"{stats['pass_rate']:.1f}% Success")
-    col2.metric("Passes in the Final Third", f"{stats['final_third_wins']}/{stats['final_third_total']}", f"{stats['final_third_rate']:.1f}% Success")
-    col3.metric("Progressive Passes", f"{stats['progressive_wins']}/{stats['progressive_total']}", f"{stats['progressive_rate']:.1f}% Success")
-    col4.metric("Passes to the Area", f"{stats['area_wins']}/{stats['area_total']}", f"{stats['area_rate']:.1f}% Success")
+    st.metric("Total Passes", stats['pass_total'])
+    st.metric("Successful Passes", stats['pass_wins'])
+    st.metric("Unsuccessful Passes", stats['pass_total'] - stats['pass_wins'])
+    st.metric("Passes to Final Third", stats['final_third_total'])
+    st.metric("Progressive Passes", stats['progressive_total'])
+    st.metric("Passes to Area", stats['area_total'])
