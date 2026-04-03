@@ -61,7 +61,6 @@ st.title("Pass Map Dashboard")
 GOAL_X = 120
 GOAL_Y = 40
 FINAL_THIRD_LINE_X = 80  # entry: start outside (x < 80) and end inside (x >= 80)
-PROGRESSIVE_THRESHOLD = 0.75  # Opta rule (your notebook)
 
 MATCHES = ["Vs Los Angeles", "Vs Slavia Praha", "Vs Sockers"]
 
@@ -89,11 +88,6 @@ def build_df(coords: list[tuple[float, float]], passes_errados: list[int]) -> pd
     df["errado"] = df["numero"].isin(passes_errados)
     df["certo"] = ~df["errado"]
 
-    # Opta-like progressive rule (your notebook)
-    dist_inicio = np.sqrt((GOAL_X - df["x_start"]) ** 2 + (GOAL_Y - df["y_start"]) ** 2)
-    dist_fim = np.sqrt((GOAL_X - df["x_end"]) ** 2 + (GOAL_Y - df["y_end"]) ** 2)
-    df["progressive"] = dist_fim <= dist_inicio * PROGRESSIVE_THRESHOLD
-
     # Final third entry: starts outside and ends inside
     df["into_final_third"] = (df["x_start"] < FINAL_THIRD_LINE_X) & (
         df["x_end"] >= FINAL_THIRD_LINE_X
@@ -114,9 +108,6 @@ def compute_stats(df: pd.DataFrame) -> dict:
 
     accuracy = (successful / total_passes * 100.0) if total_passes else 0.0
 
-    progressive_count = int(df["progressive"].sum())
-    progressive_pct = (progressive_count / total_passes * 100.0) if total_passes else 0.0
-
     final_third_total = int(df["into_final_third"].sum())
     final_third_success = int((df["into_final_third"] & ~df["errado"]).sum())
     final_third_unsuccess = int((df["into_final_third"] & df["errado"]).sum())
@@ -136,8 +127,6 @@ def compute_stats(df: pd.DataFrame) -> dict:
         "successful_passes": successful,
         "unsuccessful_passes": unsuccessful,
         "accuracy_pct": round(accuracy, 2),
-        "progressive_passes": progressive_count,
-        "progressive_pct": round(progressive_pct, 2),
         "final_third_entries": final_third_total,
         "final_third_success": final_third_success,
         "final_third_unsuccess": final_third_unsuccess,
@@ -159,26 +148,20 @@ def draw_pass_map(df: pd.DataFrame):
 
     ax.axvline(x=FINAL_THIRD_LINE_X, color="#FFD54F", linewidth=1.2, alpha=0.25)
 
-    # Colors (stronger)
+    # Colors
     for _, row in df.iterrows():
         if row["errado"]:
-            # weak red but stronger than previous
+            # red for unsuccessful
             color = (0.95, 0.18, 0.18, 0.65)
             width = 1.55
             headwidth = 2.25
             headlength = 2.25
-        elif row["progressive"]:
-            # stronger blue
-            color = (0.18, 0.55, 1.0, 0.60)
-            width = 1.70
-            headwidth = 2.35
-            headlength = 2.35
         else:
-            # light gray for completed non-progressive
-            color = (0.78, 0.78, 0.78, 0.18)
-            width = 1.25
-            headwidth = 1.95
-            headlength = 1.95
+            # green for successful
+            color = (0.18, 0.8, 0.18, 0.65)
+            width = 1.55
+            headwidth = 2.25
+            headlength = 2.25
 
         pitch.arrows(
             row["x_start"],
@@ -199,9 +182,9 @@ def draw_pass_map(df: pd.DataFrame):
         Line2D(
             [0],
             [0],
-            color=(0.18, 0.55, 1.0, 0.60),
+            color=(0.18, 0.8, 0.18, 0.65),
             lw=2.5,
-            label="Progressive Pass",
+            label="Successful Pass",
         ),
         Line2D(
             [0],
@@ -209,13 +192,6 @@ def draw_pass_map(df: pd.DataFrame):
             color=(0.95, 0.18, 0.18, 0.65),
             lw=2.5,
             label="Unsuccessful Pass",
-        ),
-        Line2D(
-            [0],
-            [0],
-            color=(0.78, 0.78, 0.78, 0.18),
-            lw=2.5,
-            label="Successful Pass",
         ),
     ]
     legend = ax.legend(
@@ -282,12 +258,6 @@ with col_stats:
     c2.metric("Successful", stats["successful_passes"])
     c3.metric("Accuracy", f'{stats["accuracy_pct"]:.1f}%')
     c4.metric("Unsuccessful", stats["unsuccessful_passes"])
-
-    st.divider()
-
-    c5, c6 = st.columns(2)
-    c5.metric("Progressive Passes", stats["progressive_passes"])
-    c6.metric("Progressive % of Total", f'{stats["progressive_pct"]:.1f}%')
 
     st.divider()
 
