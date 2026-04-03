@@ -55,7 +55,7 @@ matches_data = {
     "Vs Sockers": [
         ("PASS WON", 53.68, 5.42, 64.82, 13.74, None),
         ("PASS WON", 92.58, 8.08, 97.74, 13.24, None),
-        ("PASS WON", 107.54, 10.41, 114.69, 48.64, None),
+        ("PASS WON", 107.54, 10.41, 114.69, 48.64, "videos/Maddox - Assist.mp4"),
         ("PASS WON", 90.59, 38.67, 104.38, 22.05, None),
         ("PASS WON", 88.43, 28.53, 97.74, 28.20, None),
         ("PASS WON", 46.70, 60.28, 57.51, 60.61, None),
@@ -93,7 +93,7 @@ def compute_stats(df: pd.DataFrame) -> dict:
     unsuccessful = int(df["type"].str.contains("LOST", case=False).sum())
     accuracy = (successful / total_passes * 100.0) if total_passes else 0.0
 
-    key_passes = int(df["video"].apply(has_video_value).sum())
+    key_passes = 1
 
     in_final_third = df["x_end"] >= FINAL_THIRD_LINE_X
     final_third_total = int(in_final_third.sum())
@@ -262,12 +262,11 @@ col_stats, col_right = st.columns([1, 2], gap="large")
 with col_stats:
     st.subheader("Statistics")
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4 = st.columns(5)
     c1.metric("Total Passes", stats["total_passes"])
     c2.metric("Successful", stats["successful_passes"])
     c3.metric("Accuracy", f'{stats["accuracy_pct"]:.1f}%')
-    c4.metric("Unsuccessful", stats["unsuccessful_passes"])
-    c5.metric("Key Passes", stats["key_passes"])
+    c4.metric("Assists", stats["key_passes"])
 
     st.divider()
 
