@@ -62,10 +62,10 @@ GOAL_X = 120
 GOAL_Y = 40
 FINAL_THIRD_LINE_X = 80  # entry: start outside (x < 80) and end inside (x >= 80)
 
-MATCHES = ["Vs Los Angeles", "Vs Slavia Praha", "Vs Sockers"]
+MATCHES = ["Vs Los Angeles", "Vs Slavia Praha", "Vs Sockers", "All Matches"]
 
 st.sidebar.header("Match selection")
-selected_match = st.sidebar.radio("Choose the match", MATCHES, index=MATCHES.index("Vs Los Angeles"))
+selected_match = st.sidebar.radio("Choose the match", MATCHES, index=0)
 
 
 def build_df(coords: list[tuple[float, float]], passes_errados: list[int]) -> pd.DataFrame:
@@ -240,8 +240,21 @@ def draw_pass_map(df: pd.DataFrame):
     return img
 
 
-coords = coords_by_match[selected_match]
-errados = passes_errados_by_match[selected_match]
+if selected_match == "All Matches":
+    all_coords = []
+    all_errados = []
+    offset = 0
+    for match in MATCHES[:-1]:  # exclude "All Matches"
+        coords_match = coords_by_match[match]
+        errados_match = passes_errados_by_match[match]
+        all_coords.extend(coords_match)
+        all_errados.extend([e + offset for e in errados_match])
+        offset += len(coords_match) // 2
+    coords = all_coords
+    errados = all_errados
+else:
+    coords = coords_by_match[selected_match]
+    errados = passes_errados_by_match[selected_match]
 df = build_df(coords, errados)
 stats = compute_stats(df)
 
