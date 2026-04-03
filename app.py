@@ -8,14 +8,49 @@ from io import BytesIO
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch
 
-try:
-    from dashboard_pass_data import coords_by_match, passes_errados_by_match
-except ImportError as e:
-    raise SystemExit(
-        "Could not import `dashboard_pass_data.py`. "
-        "Make sure `dashboard_pass_data.py` exists in the same folder."
-    ) from e
+coords_by_match = {
+    'Vs Los Angeles': [
+        (55.01, 13.24), (48.36, 3.59),
+        (51.36, 8.75), (83.94, 5.76),
+        (106.55, 11.57), (114.52, 20.38),
+        (113.36, 1.10), (104.72, 18.72),
+        (79.78, 41.50), (69.14, 28.53),
+        (99.06, 53.13), (107.88, 61.11),
+        (57.17, 4.76), (77.62, 40.83),
+        (86.10, 12.74), (99.90, 10.58)
+    ],
+    'Vs Slavia Praha': [
+        (26.75, 10.58), (33.07, 20.72),
+        (64.99, 6.42), (52.52, 10.24),
+        (58.67, 22.21), (70.14, 6.75),
+        (77.29, 1.77), (91.09, 9.08),
+        (91.92, 3.26), (86.93, 12.57),
+        (88.59, 5.09), (112.53, 61.11),
+        (92.25, 24.54), (108.54, 24.37),
+        (111.53, 1.60), (117.35, 5.76),
+        (114.69, 18.89), (108.04, 38.84),
+        (103.22, 17.06), (108.54, 20.88),
+        (100.89, 22.05), (106.38, 27.53),
+        (96.41, 7.92), (109.54, 60.61),
+        (88.76, 37.34), (95.24, 25.37)
+    ],
+    'Vs Sockers': [
+        (53.68, 5.42), (64.82, 13.74),
+        (92.58, 8.08), (97.74, 13.24),
+        (107.54, 10.41), (114.69, 48.64),
+        (90.59, 38.67), (104.38, 22.05),
+        (88.43, 28.53), (97.74, 28.20),
+        (46.70, 60.28), (57.51, 60.61),
+        (108.54, 73.25), (101.23, 76.74),
+        (104.05, 21.88), (117.18, 42.33)
+    ]
+}
 
+passes_errados_by_match = {
+    'Vs Los Angeles': [7, 8],
+    'Vs Slavia Praha': [9, 10, 11, 12, 13],
+    'Vs Sockers': [8]
+}
 
 st.set_page_config(layout="wide", page_title="Pass Map Dashboard")
 st.title("Pass Map Dashboard")
