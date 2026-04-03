@@ -16,6 +16,15 @@ st.set_page_config(layout="wide", page_title="Pass Map Dashboard")
 st.title("Pass Map Dashboard - Maddox")
 
 # ==========================
+# Constants
+# ==========================
+GOAL_X = 120
+GOAL_Y = 40
+FINAL_THIRD_LINE_X = 80  # final third line: x=80
+PENALTY_AREA_X = 102  # penalty area starts at x=102
+PROGRESSIVE_THRESHOLD = 0.75  # Opta-like progressive rule
+
+# ==========================
 # Data Setup
 # ==========================
 matches_data = {
@@ -97,11 +106,27 @@ def compute_stats(df: pd.DataFrame) -> dict:
     pass_rate = (successful_passes / total_passes * 100) if total_passes > 0 else 0
     
     # Final third passes
-    final_third_mask = df['end_x'] > 80
+    final_third_mask = df['end_x'] > FINAL_THIRD_LINE_X
     final_third_passes = df[final_third_mask & is_pass]
     final_third_total = len(final_third_passes)
     final_third_successful = final_third_passes[is_successful].shape[0]
     final_third_rate = (final_third_successful / final_third_total * 100) if final_third_total > 0 else 0
+    
+    # Progressive passes (Opta-like)
+    dist_start = np.sqrt((GOAL_X - df['start_x'])**2 + (GOAL_Y - df['start_y'])**2)
+    dist_end = np.sqrt((GOAL_X - df['end_x'])**2 + (GOAL_Y - df['end_y'])**2)
+    progressive_mask = dist_end <= dist_start * PROGRESSIVE_THRESHOLD
+    progressive_passes = df[progressive_mask & is_pass]
+    progressive_total = len(progressive_passes)
+    progressive_successful = progressive_passes[is_successful].shape[0]
+    progressive_rate = (progressive_successful / progressive_total * 100) if progressive_total > 0 else 0
+    
+    # Passes to the area (penalty area)
+    area_mask = df['end_x'] > PENALTY_AREA_X
+    area_passes = df[area_mask & is_pass]
+    area_total = len(area_passes)
+    area_successful = area_passes[is_successful].shape[0]
+    area_rate = (area_successful / area_total * 100) if area_total > 0 else 0
     
     return {
         "pass_total": total_passes,
@@ -110,6 +135,12 @@ def compute_stats(df: pd.DataFrame) -> dict:
         "final_third_total": final_third_total,
         "final_third_wins": final_third_successful,
         "final_third_rate": final_third_rate,
+        "progressive_total": progressive_total,
+        "progressive_wins": progressive_successful,
+        "progressive_rate": progressive_rate,
+        "area_total": area_total,
+        "area_wins": area_successful,
+        "area_rate": area_rate,
         "fouls": 0,
     }
 
@@ -260,7 +291,8 @@ with col_vid:
     st.divider()
     st.subheader("Performance Statistics")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Overall Passes", f"{stats['pass_wins']}/{stats['pass_total']}", f"{stats['pass_rate']:.1f}% Success")
     col2.metric("Passes in the Final Third", f"{stats['final_third_wins']}/{stats['final_third_total']}", f"{stats['final_third_rate']:.1f}% Success")
-    col3.metric("Fouls Suffered", stats["fouls"])
+    col3.metric("Progressive Passes", f"{stats['progressive_wins']}/{stats['progressive_total']}", f"{stats['progressive_rate']:.1f}% Success")
+    col4.metric("Passes to the Area", f"{stats['area_wins']}/{stats['area_total']}", f"{stats['area_rate']:.1f}% Success")
