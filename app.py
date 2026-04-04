@@ -75,6 +75,7 @@ for match_name, events in matches_data.items():
         columns=["type", "x_start", "y_start", "x_end", "y_end", "video"]
     )
     dfm["numero"] = np.arange(1, len(dfm) + 1)
+    dfm["match"] = match_name
     dfs_by_match[match_name] = dfm
 
 df_all = pd.concat(dfs_by_match.values(), ignore_index=True)
@@ -310,10 +311,15 @@ with col_right:
         )
 
         RADIUS = 7.0
-        candidates = df_sel[df_sel["dist"] < RADIUS]
+        candidates = df_sel[df_sel["dist"] < RADIUS].copy()
 
         if not candidates.empty:
-            selected_pass = candidates.loc[candidates["dist"].idxmin()]
+            candidates["has_video"] = candidates["video"].apply(has_video_value)
+            candidates = candidates.sort_values(
+                by=["has_video", "dist"],
+                ascending=[False, True]
+            )
+            selected_pass = candidates.iloc[0]
 
     plt.close(fig)
 
@@ -323,7 +329,10 @@ with col_right:
     if selected_pass is None:
         st.info("Clique na bolinha no início do passe para ver o vídeo (se houver).")
     else:
-        st.success(f"Selected pass: #{int(selected_pass['numero'])} ({selected_pass['type']})")
+        st.success(
+            f"Selected pass: #{int(selected_pass['numero'])} "
+            f"({selected_pass['type']}) - {selected_pass['match']}"
+        )
         st.write(
             f"Start: ({selected_pass['x_start']:.2f}, {selected_pass['y_start']:.2f})  \n"
             f"End: ({selected_pass['x_end']:.2f}, {selected_pass['y_end']:.2f})"
