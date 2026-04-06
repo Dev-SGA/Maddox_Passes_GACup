@@ -21,6 +21,11 @@ st.caption("Clique na bolinha no início do passe para ver o vídeo (se houver).
 # ==========================
 FINAL_THIRD_LINE_X = 80
 
+# Box dimensions for StatsBomb pitch
+BOX_X_MIN = 102
+BOX_Y_MIN = 18
+BOX_Y_MAX = 62
+
 # ==========================
 # DATA
 # ==========================
@@ -100,7 +105,11 @@ def compute_stats(df: pd.DataFrame) -> dict:
     final_third_unsuccess = int((in_final_third & df["type"].str.contains("LOST", case=False)).sum())
     final_third_accuracy = (final_third_success / final_third_total * 100.0) if final_third_total else 0.0
 
-    to_box = df["x_end"] >= 100
+    to_box = (
+        (df["x_end"] >= BOX_X_MIN) &
+        (df["y_end"] >= BOX_Y_MIN) &
+        (df["y_end"] <= BOX_Y_MAX)
+    )
     box_total = int(to_box.sum())
     box_success = int((to_box & df["type"].str.contains("WON", case=False)).sum())
     box_unsuccess = int((to_box & df["type"].str.contains("LOST", case=False)).sum())
